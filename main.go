@@ -100,7 +100,6 @@ func runBot() {
 		log.Fatal("Error creating Discord session:", err)
 	}
 
-	dg.AddHandler(messageCreate)
 
 	dg.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsDirectMessages
 
@@ -250,11 +249,3 @@ func addUser() {
 	fmt.Printf("Successfully added/updated user: did=%s, discord_user_id=%d\n", did, discordUserID)
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	fmt.Printf("Message received - Channel: %s, Author: %s, Content: %s\n",
-		m.ChannelID, m.Author.Username, m.Content)
-}
