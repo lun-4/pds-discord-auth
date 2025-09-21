@@ -172,7 +172,7 @@ func pollEmailTokens(pdsAccountDB *sql.DB, botDB *sql.DB, dg *discordgo.Session)
 				continue
 			}
 
-			_, err = dg.ChannelMessageSend(channel.ID, fmt.Sprintf("Your verification token: %s", token))
+			_, err = dg.ChannelMessageSend(channel.ID, fmt.Sprintf("Your %s verification token: %s", purpose, token))
 			if err != nil {
 				log.Printf("Error sending DM to user %d: %v", discordUserID, err)
 				continue
