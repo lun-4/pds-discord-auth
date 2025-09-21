@@ -133,6 +133,7 @@ func pollEmailTokens(pdsAccountDB *sql.DB, botDB *sql.DB, dg *discordgo.Session)
 			continue
 		}
 
+		currentTokens := make(map[string]bool)
 		for rows.Next() {
 			var purpose, did, token, requestedAt string
 			err := rows.Scan(&purpose, &did, &token, &requestedAt)
@@ -140,6 +141,8 @@ func pollEmailTokens(pdsAccountDB *sql.DB, botDB *sql.DB, dg *discordgo.Session)
 				log.Printf("Error scanning email_token row: %v", err)
 				continue
 			}
+
+			currentTokens[token] = true
 
 			var exists int
 			err = botDB.QueryRow("SELECT COUNT(*) FROM sent_tokens WHERE token = ?", token).Scan(&exists)
@@ -183,6 +186,31 @@ func pollEmailTokens(pdsAccountDB *sql.DB, botDB *sql.DB, dg *discordgo.Session)
 			}
 		}
 		rows.Close()
+
+		sentRows, err := botDB.Query("SELECT token FROM sent_tokens")
+		if err != nil {
+			log.Printf("Error querying sent_tokens for cleanup: %v", err)
+			continue
+		}
+
+		for sentRows.Next() {
+			var sentToken string
+			err := sentRows.Scan(&sentToken)
+			if err != nil {
+				log.Printf("Error scanning sent token: %v", err)
+				continue
+			}
+
+			if !currentTokens[sentToken] {
+				_, err = botDB.Exec("DELETE FROM sent_tokens WHERE token = ?", sentToken)
+				if err != nil {
+					log.Printf("Error removing stale token %s from sent_tokens: %v", sentToken, err)
+				} else {
+					fmt.Printf("Removed stale token %s from sent_tokens\n", sentToken)
+				}
+			}
+		}
+		sentRows.Close()
 	}
 }
 
